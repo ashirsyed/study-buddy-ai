@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  study-buddy-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - MODEL_NAME=${MODEL_NAME:-llama-3.1-8b-instant}
+      - TEMPERATURE=${TEMPERATURE:-0.9}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+    volumes:
+      - ./results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

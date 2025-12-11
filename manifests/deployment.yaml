@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: study-buddy-ai
+  namespace: study-buddy
+  labels:
+    app: study-buddy-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: study-buddy-ai
+  template:
+    metadata:
+      labels:
+        app: study-buddy-ai
+    spec:
+      containers:
+      - name: study-buddy-ai
+        image: gcr.io/Build-With-AI-2025/study-buddy-ai:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8501
+          name: http
+          protocol: TCP
+        env:
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: groq-api-secret
+              key: GROQ_API_KEY
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+

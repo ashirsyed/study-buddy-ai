@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: study-buddy-ai-service
+  namespace: study-buddy
+  labels:
+    app: study-buddy-ai
+spec:
+  type: LoadBalancer
+  selector:
+    app: study-buddy-ai
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8501
