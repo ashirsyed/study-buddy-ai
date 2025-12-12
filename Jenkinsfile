@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_HUB_REPO = "dataguru97/studybuddy"
+        DOCKER_HUB_REPO = "ashirhs/study-buddy-ai"
         DOCKER_HUB_CREDENTIALS_ID = "dockerhub-token"
         IMAGE_TAG = "v${BUILD_NUMBER}"
     }
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                    sed -i 's|image: dataguru97/studybuddy:.*|image: dataguru97/studybuddy:${IMAGE_TAG}|' manifests/deployment.yaml
+                    sed -i 's|image: ashirhs/study-buddy-ai:.*|image: ashirhs/study-buddy-ai:${IMAGE_TAG}|' manifests/deployment.yaml
                     """
                 }
             }
@@ -70,10 +70,13 @@ pipeline {
         stage('Apply Kubernetes & Sync App with ArgoCD') {
             steps {
                 script {
-                    kubeconfig(credentialsId: 'kubeconfig', serverUrl: 'https://192.168.49.2:8443') {
+                    kubeconfig(credentialsId: 'kubeconfig', serverUrl: 'https://kubernetes.default.svc') {
                         sh '''
-                        argocd login 34.45.193.5:31704 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure
-                        argocd app sync study
+                        # Port forward ArgoCD (background)
+                        kubectl port-forward svc/argocd-server -n argocd 8080:443 &
+                        sleep 5
+                        argocd login localhost:8080 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure || echo "ArgoCD login failed"
+                        argocd app sync study-buddy-ai || echo "ArgoCD sync failed, check connection"
                         '''
                     }
                 }
