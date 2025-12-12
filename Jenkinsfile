@@ -8,8 +8,18 @@ pipeline {
     stages {
         stage('Checkout Github') {
             steps {
-                echo 'Checking out code from GitHub...'
-                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/ashirsyed/study-buddy-ai.git']])
+                script {
+                    echo 'Checking out code from GitHub...'
+                    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                        checkout([
+                            $class: 'GitSCM',
+                            branches: [[name: '*/main']],
+                            userRemoteConfigs: [[
+                                url: "https://${GITHUB_TOKEN}@github.com/ashirsyed/study-buddy-ai.git"
+                            ]]
+                        ])
+                    }
+                }
             }
         }        
         stage('Build Docker Image') {
@@ -43,13 +53,13 @@ pipeline {
         stage('Commit Updated YAML') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                         sh '''
                         git config user.name "ashirsyed"
                         git config user.email "your-email@example.com"
                         git add manifests/deployment.yaml
                         git commit -m "Update image tag to ${IMAGE_TAG}" || echo "No changes to commit"
-                        git push https://${GIT_USER}:${GIT_PASS}@github.com/ashirsyed/study-buddy-ai.git HEAD:main
+                        git push https://${GITHUB_TOKEN}@github.com/ashirsyed/study-buddy-ai.git HEAD:main
                         '''
                     }
                 }
