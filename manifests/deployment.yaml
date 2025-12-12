@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
       - name: study-buddy-ai
-        image: gcr.io/Build-With-AI-2025/study-buddy-ai:latest
-        imagePullPolicy: Always
+        image: study-buddy-ai:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 8501
           name: http
