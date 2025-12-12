@@ -68,12 +68,24 @@ pipeline {
         stage('Install Kubectl & ArgoCD CLI Setup') {
             steps {
                 sh '''
-                echo 'installing Kubectl & ArgoCD cli...'
+                echo 'Installing Kubectl & ArgoCD CLI...'
+                
+                # Create bin directory in workspace (writable by Jenkins)
+                mkdir -p ${WORKSPACE}/bin
+                export PATH=${WORKSPACE}/bin:$PATH
+                
+                # Install kubectl
                 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
                 chmod +x kubectl
-                mv kubectl /usr/local/bin/kubectl
-                curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-                chmod +x /usr/local/bin/argocd
+                mv kubectl ${WORKSPACE}/bin/kubectl
+                
+                # Install ArgoCD CLI
+                curl -sSL -o ${WORKSPACE}/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+                chmod +x ${WORKSPACE}/bin/argocd
+                
+                # Verify installations
+                kubectl version --client
+                argocd version --client
                 '''
             }
         }
@@ -82,10 +94,21 @@ pipeline {
                 script {
                     kubeconfig(credentialsId: 'kubeconfig', serverUrl: 'https://kubernetes.default.svc') {
                         sh '''
+                        # Add bin directory to PATH
+                        export PATH=${WORKSPACE}/bin:$PATH
+                        
+                        # Verify kubectl and argocd are available
+                        which kubectl || echo "kubectl not found in PATH"
+                        which argocd || echo "argocd not found in PATH"
+                        
                         # Port forward ArgoCD (background)
                         kubectl port-forward svc/argocd-server -n argocd 8080:443 &
                         sleep 5
+                        
+                        # Login to ArgoCD
                         argocd login localhost:8080 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure || echo "ArgoCD login failed"
+                        
+                        # Sync application
                         argocd app sync study-buddy-ai || echo "ArgoCD sync failed, check connection"
                         '''
                     }
