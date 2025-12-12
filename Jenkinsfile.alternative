@@ -92,8 +92,8 @@ pipeline {
         stage('Apply Kubernetes & Sync App with ArgoCD') {
             steps {
                 script {
-                    // Use withCredentials to load kubeconfig file (works without Kubernetes plugin)
-                    // Alternative: If Kubernetes plugin is installed, use withKubeConfig instead
+                    // Alternative approach: Use withCredentials to load kubeconfig file
+                    // This works even if Kubernetes plugin is not installed
                     withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                         sh '''
                         # Add bin directory to PATH
@@ -136,3 +136,4 @@ pipeline {
         }
     }
 }
+
